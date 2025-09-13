@@ -1,0 +1,5 @@
+{
+  "name": "UNIBEN Post-UME Quiz",
+  "description": "A web application to practice for the University of Benin's Post-UME screening test with timed questions and scoring.",
+  "requestFramePermissions": []
+}
