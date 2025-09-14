@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import type { Question } from '../types';
+import type { Question, SavedProgress } from '../types';
 import { useTimer } from '../hooks/useTimer';
 
 interface QuizProps {
   questions: Question[];
   onQuizEnd: (finalScore: number) => void;
+  onSaveAndExit: () => void;
+  initialState: SavedProgress | null;
 }
 
-const Quiz: React.FC<QuizProps> = ({ questions, onQuizEnd }) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
+const Quiz: React.FC<QuizProps> = ({ questions, onQuizEnd, onSaveAndExit, initialState }) => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(initialState?.currentQuestionIndex ?? 0);
+  const [score, setScore] = useState(initialState?.score ?? 0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
 
@@ -17,7 +19,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onQuizEnd }) => {
     onQuizEnd(score);
   };
   
-  const { minutes, seconds } = useTimer(30 * 60, handleTimeout);
+  const { minutes, seconds, timeLeft } = useTimer(initialState?.timeLeft ?? 30 * 60, handleTimeout);
   
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -48,15 +50,25 @@ const Quiz: React.FC<QuizProps> = ({ questions, onQuizEnd }) => {
     }
   };
 
+  const handleSaveAndExit = () => {
+    const progress: SavedProgress = {
+      currentQuestionIndex,
+      score,
+      timeLeft,
+    };
+    localStorage.setItem('jupebQuizProgress', JSON.stringify(progress));
+    onSaveAndExit();
+  };
+
   const getButtonClass = (optionKey: string) => {
     if (!isAnswered) {
       return 'bg-slate-700 hover:bg-cyan-600';
     }
     if (optionKey === currentQuestion.correctAnswer) {
-      return 'bg-green-600';
+      return 'bg-green-600 border-green-500';
     }
     if (optionKey === selectedAnswer) {
-      return 'bg-red-600';
+      return 'bg-red-600 border-red-500';
     }
     return 'bg-slate-600 opacity-50';
   };
@@ -69,9 +81,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onQuizEnd }) => {
           <div className="text-sm font-semibold bg-cyan-800 text-cyan-200 px-3 py-1 rounded-full">
             {currentQuestion.subject}
           </div>
-          <div className="text-base md:text-lg font-bold bg-slate-700 px-3 py-2 rounded-lg">
-            <span className="hidden sm:inline">Time Left: </span>
-            <span className="text-cyan-400 tabular-nums">{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+           <div className="flex items-center gap-2">
+            <button onClick={handleSaveAndExit} className="text-sm bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-2 px-3 rounded-lg transition-colors">
+              Save & Exit
+            </button>
+            <div className="text-base md:text-lg font-bold bg-slate-700 px-3 py-2 rounded-lg">
+              <span className="hidden sm:inline">Time Left: </span>
+              <span className="text-cyan-400 tabular-nums">{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+            </div>
           </div>
         </div>
 
@@ -100,10 +117,22 @@ const Quiz: React.FC<QuizProps> = ({ questions, onQuizEnd }) => {
               key={key}
               onClick={() => handleAnswerClick(key)}
               disabled={isAnswered}
-              className={`w-full p-3 sm:p-4 rounded-lg text-left text-base md:text-lg font-medium transition-colors duration-300 ${getButtonClass(key)}`}
+              className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-lg text-left text-base md:text-lg font-medium transition-colors duration-300 border-2 border-transparent ${getButtonClass(key)}`}
             >
-              <span className="font-bold mr-3">{key}.</span>
-              {value}
+              <div>
+                <span className="font-bold mr-3">{key}.</span>
+                {value}
+              </div>
+               {isAnswered && key === currentQuestion.correctAnswer && (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              {isAnswered && key === selectedAnswer && key !== currentQuestion.correctAnswer && (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
             </button>
           ))}
         </div>
