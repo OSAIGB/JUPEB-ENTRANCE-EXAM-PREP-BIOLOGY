@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 
 export const useTimer = (initialTimeInSeconds: number, onTimeout: () => void) => {
@@ -35,5 +36,6 @@ export const useTimer = (initialTimeInSeconds: number, onTimeout: () => void) =>
   return {
     minutes,
     seconds,
+    timeLeft,
   };
 };

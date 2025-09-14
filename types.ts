@@ -8,3 +8,9 @@ export interface Question {
 }
 
 export type GameState = 'start' | 'playing' | 'finished';
+
+export interface SavedProgress {
+  currentQuestionIndex: number;
+  score: number;
+  timeLeft: number;
+}
